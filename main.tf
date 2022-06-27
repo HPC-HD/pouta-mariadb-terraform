@@ -20,6 +20,10 @@ variable "storage_size"  {
     default = 256
 }
 
+variable "vm_flavour" {
+    default = "io.160GB"
+}
+
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = var.project_name
   public_key = var.keypair
@@ -67,7 +71,7 @@ resource "openstack_compute_volume_attach_v2" "va" {
 resource "openstack_compute_instance_v2" "server" {
   name            = "${var.project_name}-mariadb"
   image_name      = "Ubuntu-20.04"
-  flavor_name     = "io.160GB"
+  flavor_name     = var.vm_flavour
   key_pair        = "${openstack_compute_keypair_v2.keypair.name}"
   security_groups = ["default",openstack_compute_secgroup_v2.ssh_mosh.name,openstack_compute_secgroup_v2.mariadb.name]
   network {
