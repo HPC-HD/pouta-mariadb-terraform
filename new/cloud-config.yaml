@@ -1,21 +1,20 @@
 #cloud-config
-  bootcmd:
-   - [ cloud-init-per, once, pvcreate, pvcreate, -ff, -y, /dev/vdb, /dev/vdc ]
-   - [ cloud-init-per, once, vgcreate, vgcreate, -y, vg_data, /dev/vdb, /dev/vdc ]
-   - [ cloud-init-per, once, lvcreate_vdc, lvcreate, -y,  -l, 100%FREE, -n, lv_data, vg_data, /dev/vdc ]
-   - [ cloud-init-per, once, lvcreate_vdb, lvcreate, -y, --type, cache, --cachemode, writeback, -l, 100%FREE, -n, cachepool_data, vg_data/lv_data, /dev/vdb ]
-  fs_setup:
-   - label: lv_data
-     filesystem: 'ext4'
-     device: '/dev/vg_data/lv_data'
-     partition: 'auto'
+  disk_setup:
+    /dev/vdb:
+      table_type: 'gpt'
+      layout:
+        - [15, 82]
+        - 15
+        - 70
+      overwrite: True
   mounts:
-   - [ /dev/vdb, null ]
-   - [ /dev/vg_data/lv_data, /home/ubuntu/fast ]
+   - [ /dev/vdb ]
   package_update: true
   package_upgrade: true
   packages: 
    - mosh
+   - nmon
+   - zfsutils-linux
   write_files:
    - path: /docker-compose-init.yml
      content: |
@@ -601,21 +600,24 @@
             </DataRedundancyConfig>
         </Columnstore>
   runcmd:
-   - [ mkdir, /home/ubuntu/fast ]
-   - [ chown, ubuntu, /home/ubuntu/fast ]
-   - [ mkdir, /home/ubuntu/fast/var-lib-docker ]
-   - [ ln, -s, /home/ubuntu/fast/var-lib-docker, /var/lib/docker ]
+   - [ mkswap, /dev/vdb1 ]
+   - [ swapon, /dev/vdb1 ]
+   - [ zpool, create, z, /dev/vdc, log, /dev/vdb2, cache, /dev/vdb3 ]
+   - [ zfs, create, z/data ]
+   - [ chown, ubuntu, /z/data ]
+   - [ mkdir, /z/data/var-lib-docker ]
+   - [ ln, -s, /z/data/var-lib-docker, /var/lib/docker ]
    - [ apt, install, -y, docker-compose ]
-   - [ mkdir, /home/ubuntu/fast/${project_name}-mariadb ]
-   - [ mkdir, /home/ubuntu/fast/${project_name}-mariadb/etc-columnstore ]
-   - [ mkdir, /home/ubuntu/fast/${project_name}-mariadb/var-lib-columnstore ]
-   - [ mkdir, /home/ubuntu/fast/${project_name}-mariadb/var-lib-mysql ]
-   - [ mv, /docker-compose-init.yml, /home/ubuntu/fast/${project_name}-mariadb/ ]
-   - [ cd, /home/ubuntu/fast/${project_name}-mariadb ]
+   - [ mkdir, /z/data/${project_name}-mariadb ]
+   - [ mkdir, /z/data/${project_name}-mariadb/etc-columnstore ]
+   - [ mkdir, /z/data/${project_name}-mariadb/var-lib-columnstore ]
+   - [ mkdir, /z/data/${project_name}-mariadb/var-lib-mysql ]
+   - [ mv, /docker-compose-init.yml, /z/data/${project_name}-mariadb/ ]
+   - [ cd, /z/data/${project_name}-mariadb ]
    - [ docker-compose, -f, docker-compose-init.yml, run, -T, --rm, ${project_name}-mariadb-init ]
-   - [ chown, 998:996, /home/ubuntu/fast/${project_name}-mariadb/var-lib-mysql ]
-   - [ mv, /docker-compose.yml, /home/ubuntu/fast/${project_name}-mariadb/ ]
-   - [ mv, /Columnstore.xml, /home/ubuntu/fast/${project_name}-mariadb/etc-columnstore/Columnstore.xml ]
+   - [ chown, 997:995, /z/data/${project_name}-mariadb/var-lib-mysql ]
+   - [ mv, /docker-compose.yml, /z/data/${project_name}-mariadb/ ]
+   - [ mv, /Columnstore.xml, /z/data/${project_name}-mariadb/etc-columnstore/Columnstore.xml ]
    - [ docker-compose, up, -d ]
-   - [ sleep, 5 ]
+   - [ sh, -c, "sleep 30" ]
    - [ docker-compose, exec, -T, ${project_name}-mariadb, mariadb, -e, "SET GLOBAL simple_password_check_digits = 0;SET GLOBAL simple_password_check_other_characters = 0;GRANT ALL PRIVILEGES ON *.* TO '${root_user}'@'%' IDENTIFIED BY '${root_password}' WITH GRANT OPTION;" ]

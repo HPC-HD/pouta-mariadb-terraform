@@ -1,0 +1,32 @@
+#cloud-config
+  disk_setup:
+    /dev/vdb:
+      table_type: 'gpt'
+      layout:
+        - [15, 82]
+        - 15
+        - 70
+      overwrite: True
+  fs_setup:
+   - label: lv_data
+     filesystem: 'ext4'
+     device: '/dev/vg/lv_data'
+     partition: 'auto'
+  mounts:
+   - [ /dev/vdb ]
+  package_update: true
+  package_upgrade: true
+  packages: 
+   - mosh
+   - nmon
+   - zfsutils-linux
+  runcmd:
+   - [ mkswap, /dev/vdb1 ]
+   - [ swapon, /dev/vdb1 ]
+   - [ zpool, import, -f, -m, z ]
+   - [ zpool, replace, z, /dev/vdb2 ]
+   - [ zpool, add, z, cache, /dev/vdb3 ]
+   - [ ln, -s, /z/data/var-lib-docker, /var/lib/docker ]
+   - [ apt, install, -y, docker-compose ]
+   - [ cd, /z/data/${project_name}-mariadb ]
+   - [ docker-compose, up, -d ]
