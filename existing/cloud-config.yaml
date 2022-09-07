@@ -26,7 +26,6 @@
    - [ zpool, import, -f, -m, z ]
    - [ zpool, replace, z, /dev/vdb2 ]
    - [ zpool, add, z, cache, /dev/vdb3 ]
-   - [ ln, -s, /z/data/var-lib-docker, /var/lib/docker ]
    - [ apt, install, -y, docker-compose ]
    - [ cd, /z/data/${project_name}-mariadb ]
    - [ docker-compose, up, -d ]

@@ -39,7 +39,7 @@ resource "openstack_compute_volume_attach_v2" "va" {
 
 resource "openstack_compute_instance_v2" "server" {
   name            = "${var.project_name}-mariadb"
-  image_name      = "Ubuntu-20.04"
+  image_name      = "Ubuntu-22.04"
   flavor_name     = var.vm_flavour
   key_pair        = var.project_name
   security_groups = ["default",var.ssh_mosh_secgroup_id,var.mariadb_secgroup_id]
