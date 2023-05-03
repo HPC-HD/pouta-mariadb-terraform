@@ -7,11 +7,6 @@
         - 15
         - 70
       overwrite: True
-  fs_setup:
-   - label: lv_data
-     filesystem: 'ext4'
-     device: '/dev/vg/lv_data'
-     partition: 'auto'
   mounts:
    - [ /dev/vdb ]
   package_update: true
