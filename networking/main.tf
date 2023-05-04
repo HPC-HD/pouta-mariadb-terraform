@@ -1,6 +1,3 @@
-variable "project_name" { }
-variable "keypair" { }
-
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = var.project_name
   public_key = var.keypair
@@ -49,16 +46,3 @@ resource "openstack_networking_secgroup_rule_v2" "mariadb" {
 resource "openstack_networking_floatingip_v2" "floatip" {
   pool = "public"
 }
-
-output "ssh_mosh_secgroup_id" {
-  value = openstack_networking_secgroup_v2.ssh_mosh.id
-}
-
-output "mariadb_secgroup_id" {
-  value = openstack_networking_secgroup_v2.mariadb.id
-}
-
-output "floating_ip" {
-  value = openstack_networking_floatingip_v2.floatip.address
-}
-
