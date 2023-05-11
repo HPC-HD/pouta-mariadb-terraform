@@ -1,77 +1,77 @@
 #cloud-config
-  disk_setup:
-    /dev/vdb:
-      table_type: 'gpt'
-      layout:
-        - [15, 82]
-        - 15
-        - 70
-      overwrite: True
-  mounts:
-   - [ /dev/vdb ]
-  package_update: true
-  package_upgrade: true
-  packages: 
-   - mosh
-   - nmon
-   - zfsutils-linux
-  write_files:
-   - path: /docker-compose.yml
-     content: |
-       version: '3'
-       services:
-         ${project_name}-mariadb:
-           image: mariadb/columnstore
-           restart: always
-           ports:
-            - 3306:3306
-           volumes:
-            - "./var-lib-mysql:/var/lib/mysql"
-            - "./var-lib-columnstore:/var/lib/columnstore"
-            - "./etc-columnstore:/etc/columnstore"
-           hostname: mcs1
-           environment:
-            - "PM1=mcs1"
-            - "ADMIN_HOST=%"
-            - "ADMIN_PASS=${mariadb_root_password}"
-            - "ADMIN_USER=${mariadb_root_user}"
-            - "CEJ_PASS=${cej_password}"
-            - "CEJ_USER=cej"
-            - "CMAPI_KEY=${cmapi_key}"
-            - "S3_ACCESS_KEY_ID=${s3_access_key_id}"
-            - "S3_BUCKET=${s3_bucket}"
-            - "S3_ENDPOINT=${s3_endpoint}"
-            - "S3_REGION="
-            - "S3_SECRET_ACCESS_KEY=${s3_secret_access_key}"
-            - "USE_S3_STORAGE=${use_s3_storage}"
-   - path: /init.sh
-     content: |
-       #!/bin/sh
-       mkswap /dev/vdb1
-       swapon /dev/vdb1
-       if [ "$1" = "true" ]; then
-         zpool import -f -m z
-         zpool replace z /dev/vdb2
-         zpool add z cache /dev/vdb3
-         cd /z/data/${project_name}-mariadb
-         apt install -y docker-compose
-         docker-compose up -d
-       else
-         zpool create z /dev/vdc log /dev/vdb2 cache /dev/vdb3
-         zfs create z/var-lib-docker -o mountpoint=/var/lib/docker
-         zfs create z/data
-         mkdir /z/data/${project_name}-mariadb
-         mkdir /z/data/${project_name}-mariadb/etc-columnstore
-         mkdir /z/data/${project_name}-mariadb/var-lib-columnstore
-         mkdir /z/data/${project_name}-mariadb/var-lib-mysql
-         chown 998:996 /z/data/${project_name}-mariadb/var-lib-mysql
-         cp /docker-compose.yml /z/data/${project_name}-mariadb
-         cd /z/data/${project_name}-mariadb
-         apt install -y docker-compose
-         docker-compose up -d
-         sleep 30
-         docker-compose exec -T ${project_name}-mariadb provision mcs1
-       fi
-  runcmd:
-   - [ chmod, u+x, /init.sh ]
-   - [ sh, -c, /init.sh, ${data_volume_initialised} ]
+disk_setup:
+  /dev/vdb:
+    table_type: "gpt"
+    layout:
+      - [15, 82]
+      - 15
+      - 70
+    overwrite: True
+mounts:
+  - [/dev/vdb]
+package_update: true
+package_upgrade: true
+packages:
+  - mosh
+  - nmon
+  - zfsutils-linux
+write_files:
+  - path: /docker-compose.yml
+    content: |
+      version: '3'
+      services:
+        ${project_name}-mariadb:
+          image: mariadb/columnstore
+          restart: always
+          ports:
+           - 3306:3306
+          volumes:
+           - "./var-lib-mysql:/var/lib/mysql"
+           - "./var-lib-columnstore:/var/lib/columnstore"
+           - "./etc-columnstore:/etc/columnstore"
+          hostname: mcs1
+          environment:
+           - "PM1=mcs1"
+           - "ADMIN_HOST=%"
+           - "ADMIN_PASS=${mariadb_root_password}"
+           - "ADMIN_USER=${mariadb_root_user}"
+           - "CEJ_PASS=${cej_password}"
+           - "CEJ_USER=cej"
+           - "CMAPI_KEY=${cmapi_key}"
+           - "S3_ACCESS_KEY_ID=${s3_access_key_id}"
+           - "S3_BUCKET=${s3_bucket}"
+           - "S3_ENDPOINT=${s3_endpoint}"
+           - "S3_REGION="
+           - "S3_SECRET_ACCESS_KEY=${s3_secret_access_key}"
+           - "USE_S3_STORAGE=${use_s3_storage}"
+  - path: /init.sh
+    content: |
+      #!/bin/sh
+      mkswap /dev/vdb1
+      swapon /dev/vdb1
+      if zpool import | grep -q "pool: z"; then
+        zpool import -f -m z
+        zpool replace z /dev/vdb2
+        zpool add z cache /dev/vdb3
+        cd /z/data/${project_name}-mariadb
+        apt install -y docker-compose
+        docker-compose up -d
+      else
+        zpool create z /dev/vdc log /dev/vdb2 cache /dev/vdb3
+        zfs create z/var-lib-docker -o mountpoint=/var/lib/docker
+        zfs create z/data
+        mkdir /z/data/${project_name}-mariadb
+        mkdir /z/data/${project_name}-mariadb/etc-columnstore
+        mkdir /z/data/${project_name}-mariadb/var-lib-columnstore
+        mkdir /z/data/${project_name}-mariadb/var-lib-mysql
+        chown 998:996 /z/data/${project_name}-mariadb/var-lib-mysql
+        cp /docker-compose.yml /z/data/${project_name}-mariadb
+        cd /z/data/${project_name}-mariadb
+        apt install -y docker-compose
+        docker-compose up -d
+        sleep 30
+        docker-compose exec -T ${project_name}-mariadb provision mcs1
+      fi
+runcmd:
+  - [chmod, u+x, /init.sh]
+  - [sh, -c, /init.sh]

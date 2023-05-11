@@ -59,8 +59,7 @@ resource "openstack_compute_instance_v2" "server" {
     s3_bucket=var.s3_bucket, 
     s3_secret_access_key=var.s3_secret_access_key,
     s3_endpoint=var.s3_endpoint, 
-    use_s3_storage=var.use_s3_storage,
-    data_volume_initialised=var.data_volume_initialised
+    use_s3_storage=var.use_s3_storage
   })
 }
 

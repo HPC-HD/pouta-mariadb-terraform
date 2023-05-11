@@ -71,8 +71,3 @@ variable "s3_endpoint" {
     description = "S3 endpoint address (if S3 backend storage used)"
     default = "a3s.fi" 
 }
-
-variable "data_volume_initialised" { 
-    description = "Whether the data volume has already been initialised or whether it needs to be initialised"
-    type = bool
-}
