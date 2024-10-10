@@ -4,8 +4,8 @@ disk_setup:
     table_type: "gpt"
     layout:
       - [15, 82]
-      - 15
-      - 70
+      - 5
+      - 80
     overwrite: True
 mounts:
   - [/dev/vdb]
