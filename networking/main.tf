@@ -1,6 +1,6 @@
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = var.project_name
-  public_key = var.keypair
+  public_key = "${file("${var.keypair}.pub")}"
 }
 
 resource "openstack_networking_secgroup_v2" "ssh_mosh" {
